@@ -1,2 +1,9 @@
 ---
 # tasks file for bsw2.docker
+- name: official docker repository
+  apt_repository:
+    repo: deb http://archive.canonical.com/ubuntu hardy partner
+    state: present
+- name: docker package
+  apt:
+    name: docker.io
