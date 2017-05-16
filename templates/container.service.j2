@@ -1,16 +1,29 @@
 [Unit]
 Description={{ item["name"] }}
+Requires=docker.service
 After=docker.service
 
+Requires=docker-proxy.service
+After=docker-proxy.service
+
+{% if item['links'] is defined %}
+{% for link in item['links'] %}
+After=docker-{{ link| regex_replace('^(?P<host>.+):(?P<guest>.+)$', '\\g<host>') }}.service
+BindsTo=docker-{{ link| regex_replace('^(?P<host>.+):(?P<guest>.+)$', '\\g<host>') }}.service
+{% endfor %}
+{% endif %}
+
 [Service]
+Restart=always
 TimeoutStartSec=0
 KillMode=none
 EnvironmentFile=/etc/environment
 ExecStartPre=-/usr/bin/docker kill {{ item["name"] }}
 ExecStartPre=-/usr/bin/docker rm {{ item["name"] }}
 ExecStartPre=/usr/bin/docker pull {{ item["image"] }}
-ExecStart=/usr/bin/docker run {% if item["expose"] is defined %}{% for port in item["expose"] %}--expose={{ port }} {% endfor %}{% endif %} {% if item["ports"] is defined %}{% for port in item["ports"] %}--publish={{ port }} {% endfor %}{% endif %} {% if item["volumes"] is defined %}{% for volume in item["volumes"] %}--volume={{ volume }} {% endfor %}{% endif %} {% if item["ulimits"] is defined %}{% for ulimit in item["ulimits"] %}--ulimit={{ ulimit }} {% endfor %}{% endif %} {% if item['privileged'] | default(container_privileged) %}--privileged=true{% endif %} --name {{ item["name"] }} {{ item["image"] }}
-ExecStop=/usr/bin/docker stop {{ item["name"] }}
+ExecStart=/usr/bin/docker run  {% if item['working_dir'] is defined %}-w {{ item['working_dir'] }}{% endif %} {% if item['links'] is defined %}{% for link in item['links'] %} --link {{ link }}{% endfor %}{% endif %}{% if item["expose"] is defined %}{% for port in item["expose"] %}--expose={{ port }} {% endfor %}{% endif %} {% if item["ports"] is defined %}{% for port in item["ports"] %}--publish={{ port }} {% endfor %}{% endif %} {% if item["volumes"] is defined %}{% for volume in item["volumes"] %}--volume={{ volume }} {% endfor %}{% endif %} {% if item['env'] is defined %}{% for key,value in item['env'].iteritems() %} -e "{{ key }}={{ value }}"{% endfor %}{% endif %}{% if item["ulimits"] is defined %}{% for ulimit in item["ulimits"] %}--ulimit={{ ulimit }} {% endfor %}{% endif %} {% if item['privileged'] | default(container_privileged) %}--privileged=true{% endif %} --name {{ item["name"] }} {{ item["image"] }} {% if item['command'] is defined %} {{ item['command'] }} {% endif %}
+
+ExecStop=/usr/bin/docker stop -t 2 {{ item["name"] }}
 
 [Install]
 WantedBy=multi-user.target

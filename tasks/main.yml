@@ -14,6 +14,8 @@
     volumes: "{{ item['volumes'] | default(omit) }}"
     ulimits: "{{ item['ulimits'] | default(omit) }}"
     restart: "{{ item['restart'] | default(container_restart) }}"
+    env: "{{ item['env'] | default(omit) }}"
+    links: "{{ item['links'] | default(omit) }}"
   when: item['run_as_service'] | default(not container_run_as_service)
   with_items: "{{ docker_containers }}"
 
