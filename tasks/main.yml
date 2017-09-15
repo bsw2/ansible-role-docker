@@ -16,7 +16,7 @@
     restart: "{{ item['restart'] | default(container_restart) }}"
     env: "{{ item['env'] | default(omit) }}"
     links: "{{ item['links'] | default(omit) }}"
-  when: item['run_as_service'] | default(not container_run_as_service)
+  when: not (item['run_as_service'] | default(container_run_as_service) )
   with_items: "{{ docker_containers }}"
 
 # Create a mock docker executable in order to test the role on a system that doesn't have docker installed
