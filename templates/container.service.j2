@@ -3,8 +3,10 @@ Description={{ item["name"] }}
 Requires=docker.service
 After=docker.service
 
+{% if item.requires_proxy %}
 Requires=docker-proxy.service
 After=docker-proxy.service
+{% endif %}
 
 {% if item['links'] is defined %}
 {% for link in item['links'] %}
